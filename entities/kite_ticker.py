@@ -36,9 +36,8 @@ class KiteLiveDataServer(KiteTicker):
         def on_ticks(ws, ticks):
             for tick_ in ticks:
                 tick = LiveTicker(tick_)
-                print(tick.instrument_token, tick)
 
-                self.db.write(tick.instrument_token, tick.json)
+                self.db.write(tick.instrument_token, tick.json, True)
 
         self.on_ticks = on_ticks
         self.on_connect = on_connect
