@@ -27,13 +27,15 @@ class KiteLiveDataServer(KiteTicker):
         def on_connect(ws, response):
             print("[connecting to websocket]")
 
-            # self.subscribe([408065, 884737])
-            # self.set_mode(self.MODE_FULL, [408065, 884737])
+            self.subscribe([256265, 260105])
+            self.set_mode(self.MODE_FULL, [260105, 260105])
 
         def on_error(ws, code, reason):
             print(f"[error :- {code} - {reason}]")
 
         def on_ticks(ws, ticks):
+            print(ticks)
+
             for tick_ in ticks:
                 tick = LiveTicker(tick_)
 
