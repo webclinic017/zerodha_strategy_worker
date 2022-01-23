@@ -31,8 +31,9 @@ for strategy in strategies:
     for _ticker in strategy["strategy_tickers"]:
         token_set.add(_ticker["instrument_token"])
 
-ticker.subscribe(list(token_set))
-ticker.set_mode(ticker.MODE_FULL, list(token_set))
+if len(token_set) > 0: 
+    ticker.subscribe(list(token_set))
+    ticker.set_mode(ticker.MODE_FULL, list(token_set))
 
 
 def entry_service():
