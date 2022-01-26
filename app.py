@@ -7,10 +7,9 @@ import datetime
 
 from entities.kite_ticker import KiteLiveDataServer
 from entities.redis_db import DB
-from threading import Thread
+from entities.bot import TradeBot
 
-import talib as ta
-import pandas as pd
+from threading import Thread
 
 from kiteconnect import KiteConnect
 
@@ -49,37 +48,19 @@ if len(token_set) > 0:
 
 print(json.dumps(strategies, indent=2))
 
+bot = TradeBot()
+
 
 def entry_service():
     print("[*] starting the entry service [*]")
     while True:
-        for ticker in tickers:
-            print(f"[*] running strategy for {ticker} [*]")
+        for strategy in strategies:
+            print(f'[*] running strategy {strategy["name"]} [*]')
 
-            print(f"[*] fetching the historical data of {ticker} [*]")
-            historical_df = pd.DataFrame(
-                kite.historical_data(
-                    instrument_token=tickers[ticker]["instrument_token"],
-                    from_date=(datetime.date.today() - datetime.timedelta(days=1)),
-                    to_date=(datetime.date.today() - datetime.timedelta(days=1)),
-                    interval="5minute",
-                )
-            )
+            for ticker in strategy["strategy_tickers"]:
+                print(ticker)
 
-            print(f"[*] historical data of {ticker} [*]")
-            print(historical_df.tail())
-
-            print(f"[*] fetching the indicators [*]")
-
-            indicators = ta.get_functions()
-
-            for indicator in indicators:
-                print(f"[*] fetching {indicator} for {ticker} [*]")
-
-                try:
-                    print(getattr(ta, indicator)(historical_df.close))
-                except Exception as e:
-                    print(f"[*] Exception {e} [*]")
+                print(bot.live_data(ticker["instrument_token"]))
 
         time.sleep(300)
 

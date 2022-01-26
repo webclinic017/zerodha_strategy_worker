@@ -34,10 +34,8 @@ class KiteLiveDataServer(KiteTicker):
             print(f"[error :- {code} - {reason}]")
 
         def on_ticks(ws, ticks):
-            for tick_ in ticks:
-                tick = LiveTicker(tick_)
-
-                self.db.write(tick.instrument_token, tick.json, True)
+            for tick in ticks:
+                self.db.write(tick["instrument_token"], tick)
 
         self.on_ticks = on_ticks
         self.on_connect = on_connect

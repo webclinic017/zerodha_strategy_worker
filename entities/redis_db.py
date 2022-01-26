@@ -7,10 +7,8 @@ class DB:
     def __init__(self, host="localhost"):
         self.redis = redis.StrictRedis(host=host)
 
-    def write(self, key: str, data: dict, threaded=False):
-        serialized_data = json.dumps(data, default=str)
+    def __write(self, key, data):
+        self.redis.set(key, json.dumps(data))
 
-        if threaded:
-            Thread(target=self.redis.set, args=[serialized_data])
-        else:
-            self.redis.set(key, serialized_data)
+    def write(self, key, data: dict):
+        Thread(target=self.__write, args=[key, data]).start()
