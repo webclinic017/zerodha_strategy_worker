@@ -34,8 +34,6 @@ class KiteLiveDataServer(KiteTicker):
             print(f"[error :- {code} - {reason}]")
 
         def on_ticks(ws, ticks):
-            print(ticks)
-
             for tick_ in ticks:
                 tick = LiveTicker(tick_)
 

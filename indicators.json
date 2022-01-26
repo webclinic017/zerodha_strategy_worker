@@ -1,4 +1,41 @@
 {
+  "Cycle Indicators": [
+    "HT_DCPERIOD",
+    "HT_DCPHASE",
+    "HT_PHASOR",
+    "HT_SINE",
+    "HT_TRENDMODE"
+  ],
+  "Math Operators": [
+    "ADD",
+    "DIV",
+    "MAX",
+    "MAXINDEX",
+    "MIN",
+    "MININDEX",
+    "MINMAX",
+    "MINMAXINDEX",
+    "MULT",
+    "SUB",
+    "SUM"
+  ],
+  "Math Transform": [
+    "ACOS",
+    "ASIN",
+    "ATAN",
+    "CEIL",
+    "COS",
+    "COSH",
+    "EXP",
+    "FLOOR",
+    "LN",
+    "LOG10",
+    "SIN",
+    "SINH",
+    "SQRT",
+    "TAN",
+    "TANH"
+  ],
   "Momentum Indicators": [
     "ADX",
     "ADXR",
@@ -113,6 +150,7 @@
     "CDLUPSIDEGAP2CROWS",
     "CDLXSIDEGAP3METHODS"
   ],
+  "Price Transform": ["AVGPRICE", "MEDPRICE", "TYPPRICE", "WCLPRICE"],
   "Statistic Functions": [
     "BETA",
     "CORREL",

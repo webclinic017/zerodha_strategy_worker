@@ -1,2 +1,3 @@
 kiteconnect
 redis
+pandas_ta
