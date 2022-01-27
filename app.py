@@ -46,8 +46,6 @@ if len(token_set) > 0:
     ticker.set_mode(ticker.MODE_FULL, list(token_set))
 
 
-print(json.dumps(strategies, indent=2))
-
 bot = TradeBot()
 pubsub = bot.r.pubsub()
 
@@ -99,8 +97,11 @@ def entry_service():
 
                 live_ticker = live_data[ticker["instrument_token"]]
 
-                entry_nodes[strategy["id"]].evaluate(historical_data, live_ticker)
-                exit_nodes[strategy["id"]].evaluate(historical_data, live_ticker)
+                if entry_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
+                    print(f"[*] BUY THE TICKER: {ticker['ticker']}")
+
+                if exit_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
+                    print(f"[*] EXIT THE TICKER: {ticker['ticker']}")
 
 
 entry_service()

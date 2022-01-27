@@ -3,9 +3,21 @@ Tree node is used for validation of the expression tree
 """
 from collections import deque
 from talib import abstract
+import operator
 
 
 class ConditionNode:
+    operator_map = {
+        ">": operator.gt,
+        "<": operator.lt,
+        "==": operator.eq,
+        ">=": operator.ge,
+        "<=": operator.le,
+        "!=": operator.ne,
+        "and": operator.and_,
+        "or": operator.or_,
+    }
+
     def __init__(self, value, node_type, kwargs):
         self.value = value
         self.node_type = node_type
@@ -15,6 +27,9 @@ class ConditionNode:
         self.left_child = None
 
     def __str__(self):
+        if "output" in self.kwargs:
+            return f"({self.value}, {self.node_type}, {self.kwargs['output']})"
+
         return f"({self.value}, {self.node_type})"
 
     @classmethod
@@ -22,10 +37,18 @@ class ConditionNode:
         if data == None:
             return None
 
+        kwargs = data.get("kwargs", {})
+
+        if kwargs != {}:
+            if "parameters" in kwargs:
+                for k, v in kwargs["parameters"].items():
+                    if k in ["nbdevup", "nbdevdn", "nbdev"]:
+                        kwargs["parameters"][k] = float(v)
+
         node = cls(
             value=data["value"],
             node_type=data["node_type"],
-            kwargs=data.get("kwargs", {}),
+            kwargs=kwargs,
         )
 
         if "left_child" in data:
@@ -43,28 +66,25 @@ class ConditionNode:
             return True
 
         if node.node_type == "constant":
-            print(node.value)
-
-            return True
-
-        if node.node_type == "operator":
-            print(node.value)
-
-            return True
+            return float(node.value)
 
         if node.node_type == "indicator":
-            print(node.value)
-            print(node.kwargs)
-
-            print(
-                abstract.Function(node.value)(
-                    historical_data,
-                    **node.kwargs.get("inputs", {}),
-                    **node.kwargs.get("parameters", {}),
-                )
+            techenical = abstract.Function(node.value)(
+                historical_data,
+                **node.kwargs.get("inputs", {}),
+                **node.kwargs.get("parameters", {}),
             )
 
-            return True
+            if node.kwargs["output"] in ["real", "integer"]:
+                return techenical.tail(1).values[0]
+            else:
+                return techenical.tail(1)[node.kwargs["output"]].values[0]
+
+        if node.node_type == "operator":
+            return self.operator_map[node.value](
+                self.evaluate_helper(node.left_child, historical_data, live_data),
+                self.evaluate_helper(node.right_child, historical_data, live_data),
+            )
 
         return False
 
