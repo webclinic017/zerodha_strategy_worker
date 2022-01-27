@@ -4,15 +4,13 @@ import requests
 import json
 import time
 import datetime
-
 from entities.kite_ticker import KiteLiveDataServer
 from entities.redis_db import DB
 from entities.bot import TradeBot
-
 from threading import Thread
-
 from kiteconnect import KiteConnect
-
+from talib import abstract
+import pandas as pd
 
 API_KEY = os.environ["API_KEY"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
@@ -58,9 +56,30 @@ def entry_service():
             print(f'[*] running strategy {strategy["name"]} [*]')
 
             for ticker in strategy["strategy_tickers"]:
-                print(ticker)
+                historical_data = pd.DataFrame(
+                    kite.historical_data(
+                        instrument_token=ticker["instrument_token"],
+                        from_date=datetime.date.today(),
+                        to_date=datetime.date.today(),
+                        interval="5minute",
+                    )
+                )
 
-                print(bot.live_data(ticker["instrument_token"]))
+                if len(historical_data) == 0:
+                    continue
+
+                print(historical_data.head())
+
+                entry_indicator = abstract.Function(strategy["entry_node"]["value"])
+                exit_indicator = abstract.Function(strategy["exit_node"]["value"])
+
+                print(
+                    entry_indicator(
+                        historical_data,
+                        **strategy["entry_node"]["kwargs"].get("inputs", {}),
+                        **strategy["entry_node"]["kwargs"].get("parameters", {}),
+                    )
+                )
 
         time.sleep(300)
 

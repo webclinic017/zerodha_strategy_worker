@@ -14,4 +14,9 @@ class TradeBot:
         self.r = redis.Redis(decode_responses=True)
 
     def live_data(self, token) -> LiveTicker:
-        return LiveTicker(json.loads(self.r.get(token)))
+        tick = self.r.get(token)
+
+        if tick == None:
+            tick = {}
+
+        return LiveTicker(json.loads(tick))
