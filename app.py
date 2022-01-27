@@ -7,10 +7,12 @@ import datetime
 from entities.kite_ticker import KiteLiveDataServer
 from entities.redis_db import DB
 from entities.bot import TradeBot
+from entities.node import ConditionNode
 from threading import Thread
 from kiteconnect import KiteConnect
 from talib import abstract
 import pandas as pd
+
 
 API_KEY = os.environ["API_KEY"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
@@ -55,6 +57,9 @@ pubsub.subscribe("live:data")
 def entry_service():
     print("[*] starting the entry service [*]")
 
+    entry_nodes = dict()
+    exit_nodes = dict()
+
     for message in pubsub.listen():
         if message["type"] == "subscribe":
             continue
@@ -63,10 +68,19 @@ def entry_service():
             map(lambda x: (x["instrument_token"], x), json.loads(message["data"]))
         )
 
-        print(live_data)
+        # print(live_data)
 
         # loop over all tickers
         for strategy in strategies:
+            if strategy["id"] not in entry_nodes:
+                entry_nodes[strategy["id"]] = ConditionNode.from_dict(
+                    strategy["entry_node"]
+                )
+
+                exit_nodes[strategy["id"]] = ConditionNode.from_dict(
+                    strategy["exit_node"]
+                )
+
             for ticker in strategy["strategy_tickers"]:
                 if ticker["instrument_token"] not in live_data:
                     continue
@@ -74,8 +88,8 @@ def entry_service():
                 historical_data = pd.DataFrame(
                     kite.historical_data(
                         instrument_token=ticker["instrument_token"],
-                        from_date=datetime.date.today(),
-                        to_date=datetime.date.today(),
+                        from_date=datetime.date.today() - datetime.timedelta(days=1),
+                        to_date=datetime.date.today() - -datetime.timedelta(days=1),
                         interval="5minute",
                     )
                 )
@@ -85,8 +99,8 @@ def entry_service():
 
                 live_ticker = live_data[ticker["instrument_token"]]
 
-                print(live_ticker)
-                print(historical_data.head())
+                entry_nodes[strategy["id"]].evaluate(historical_data, live_ticker)
+                exit_nodes[strategy["id"]].evaluate(historical_data, live_ticker)
 
 
 entry_service()
