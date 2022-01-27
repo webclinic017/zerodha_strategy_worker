@@ -83,14 +83,24 @@ def entry_service():
                 if ticker["instrument_token"] not in live_data:
                     continue
 
-                historical_data = pd.DataFrame(
-                    kite.historical_data(
-                        instrument_token=ticker["instrument_token"],
-                        from_date=datetime.date.today() - datetime.timedelta(days=1),
-                        to_date=datetime.date.today() - -datetime.timedelta(days=1),
-                        interval="5minute",
+                # if the ticker is already entered then dont enter it for next 5 minute
+                if bot.r.get(f"ENTERED:{ticker['instrument_token']}"):
+                    continue
+
+                try:
+                    historical_data = pd.DataFrame(
+                        kite.historical_data(
+                            instrument_token=ticker["instrument_token"],
+                            from_date=datetime.date.today()
+                            - datetime.timedelta(days=1),
+                            to_date=datetime.date.today() - datetime.timedelta(days=1),
+                            interval="5minute",
+                        )
                     )
-                )
+                except Exception:
+                    # if fetching of historical data is unsuccessful due to network error
+                    # then continue with next ticker
+                    continue
 
                 if len(historical_data) == 0:
                     continue
@@ -99,6 +109,14 @@ def entry_service():
 
                 if entry_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
                     print(f"[*] BUY THE TICKER: {ticker['ticker']}")
+
+                    # add the ticker to entered tickers and set its expiry to 5 minute
+                    # so that until next 5 minute the ticker is not entered
+                    bot.r.set(
+                        f"ENTERED:{ticker['instrument_token']}",
+                        1,
+                        datetime.timedelta(minutes=5),
+                    )
 
                 if exit_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
                     print(f"[*] EXIT THE TICKER: {ticker['ticker']}")
