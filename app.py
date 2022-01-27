@@ -47,15 +47,30 @@ if len(token_set) > 0:
 print(json.dumps(strategies, indent=2))
 
 bot = TradeBot()
+pubsub = bot.r.pubsub()
+
+pubsub.subscribe("live:data")
 
 
 def entry_service():
     print("[*] starting the entry service [*]")
-    while True:
-        for strategy in strategies:
-            print(f'[*] running strategy {strategy["name"]} [*]')
 
+    for message in pubsub.listen():
+        if message["type"] == "subscribe":
+            continue
+
+        live_data = dict(
+            map(lambda x: (x["instrument_token"], x), json.loads(message["data"]))
+        )
+
+        print(live_data)
+
+        # loop over all tickers
+        for strategy in strategies:
             for ticker in strategy["strategy_tickers"]:
+                if ticker["instrument_token"] not in live_data:
+                    continue
+
                 historical_data = pd.DataFrame(
                     kite.historical_data(
                         instrument_token=ticker["instrument_token"],
@@ -68,20 +83,10 @@ def entry_service():
                 if len(historical_data) == 0:
                     continue
 
+                live_ticker = live_data[ticker["instrument_token"]]
+
+                print(live_ticker)
                 print(historical_data.head())
-
-                entry_indicator = abstract.Function(strategy["entry_node"]["value"])
-                exit_indicator = abstract.Function(strategy["exit_node"]["value"])
-
-                print(
-                    entry_indicator(
-                        historical_data,
-                        **strategy["entry_node"]["kwargs"].get("inputs", {}),
-                        **strategy["entry_node"]["kwargs"].get("parameters", {}),
-                    )
-                )
-
-        time.sleep(300)
 
 
 entry_service()

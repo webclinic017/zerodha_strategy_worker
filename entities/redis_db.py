@@ -12,3 +12,6 @@ class DB:
 
     def write(self, key, data: dict):
         Thread(target=self.__write, args=[key, data]).start()
+
+    def publish(self, topic, data: dict):
+        self.redis.publish(topic, json.dumps(data, default=str))

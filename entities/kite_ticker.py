@@ -34,6 +34,8 @@ class KiteLiveDataServer(KiteTicker):
             print(f"[error :- {code} - {reason}]")
 
         def on_ticks(ws, ticks):
+            self.db.publish("live:data", ticks)
+
             for tick in ticks:
                 self.db.write(tick["instrument_token"], tick)
 
