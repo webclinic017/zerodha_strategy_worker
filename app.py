@@ -88,15 +88,26 @@ def entry_service():
                     continue
 
                 try:
-                    historical_data = pd.DataFrame(
-                        kite.historical_data(
+                    if bot.r.get(f"HISTORICAL:{ticker['instrument_token']}"):
+                        historical_data = pd.DataFrame(
+                            json.loads(
+                                bot.r.get(f"HISTORICAL:{ticker['instrument_token']}")
+                            )
+                        )
+                    else:
+                        data = kite.historical_data(
                             instrument_token=ticker["instrument_token"],
-                            from_date=datetime.date.today()
-                            - datetime.timedelta(days=1),
-                            to_date=datetime.date.today() - datetime.timedelta(days=1),
+                            from_date=datetime.date.today(),
+                            to_date=datetime.date.today(),
                             interval="5minute",
                         )
-                    )
+                        bot.r.set(
+                            f"HISTORICAL:{ticker['instrument_token']}",
+                            json.dumps(data, default=str),
+                            datetime.timedelta(minutes=5),
+                        )
+                        historical_data = pd.DataFrame(data)
+
                 except Exception:
                     # if fetching of historical data is unsuccessful due to network error
                     # then continue with next ticker
@@ -108,7 +119,7 @@ def entry_service():
                 live_ticker = live_data[ticker["instrument_token"]]
 
                 if entry_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
-                    print(f"[*] BUY THE TICKER: {ticker['ticker']}")
+                    print(f"[*] BUY THE TICKER: {ticker['ticker']} {strategy['id']}")
 
                     # add the ticker to entered tickers and set its expiry to 5 minute
                     # so that until next 5 minute the ticker is not entered
@@ -118,7 +129,10 @@ def entry_service():
                         datetime.timedelta(minutes=5),
                     )
 
-                if exit_nodes[strategy["id"]].evaluate(historical_data, live_ticker):
+                if bot.r.get(f"ENTERED:{ticker['instrument_token']}") and exit_nodes[
+                    strategy["id"]
+                ].evaluate(historical_data, live_ticker):
+
                     print(f"[*] EXIT THE TICKER: {ticker['ticker']}")
 
 

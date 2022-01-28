@@ -60,8 +60,6 @@ class ConditionNode:
         return node
 
     def evaluate_helper(self, node, historical_data, live_data):
-        print(f"[*] evaluate: {node}")
-
         if node == None:
             return True
 
